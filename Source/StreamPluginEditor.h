@@ -37,6 +37,7 @@ public:
     StreamPluginEditor(GenericProcessor *parentNode, bool useDefaultParameters);
     virtual ~StreamPluginEditor();
     void setPort(uint32_t port, void callback());
+    void setChannel(std::string channels, void callback());
     void buttonClicked(Button* button) override;
 	void startAcquisition() override;
 	void stopAcquisition()  override;
@@ -44,6 +45,8 @@ public:
 private:
     TextEditor *portEditor;
     TextButton *portButton;
+    TextEditor *channelEditor;
+    TextButton *channelButton;
     StreamPlugin *StreamProcessor;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StreamPluginEditor)

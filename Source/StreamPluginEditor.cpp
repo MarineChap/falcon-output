@@ -33,14 +33,25 @@ StreamPluginEditor::StreamPluginEditor(GenericProcessor *parentNode, bool useDef
 
     portEditor = new TextEditor("dataport");
     addAndMakeVisible(portEditor);
-    portEditor->setBounds(32, 45, 80, 23);
+    portEditor->setBounds(10, 45, 40, 23);
     portEditor->setText(std::to_string(StreamProcessor->getPort()));
 
-    portButton = new TextButton("set_port");
+    portButton = new TextButton();
     addAndMakeVisible(portButton);
-    portButton->setBounds(32, 85, 80, 23);
+    portButton->setBounds(10, 85, 40, 23);
     portButton->setButtonText("Set Port");
     portButton->addListener(this);
+
+    channelEditor = new TextEditor("channels");
+    addAndMakeVisible(channelEditor);
+    channelEditor->setBounds(60, 45, 80, 23);
+    channelEditor->setText(StreamProcessor->getChannels());
+
+    channelButton = new TextButton();
+    addAndMakeVisible(channelButton);
+    channelButton->setBounds(60, 85, 80, 23);
+    channelButton->setButtonText("Select channels");
+    channelButton->addListener(this);
 
 }
 
@@ -65,12 +76,21 @@ void StreamPluginEditor::buttonClicked(Button* button)
             CoreServices::sendStatusMessage("ZMQ port updated");
         }
     }
+    else if (button == channelButton){
+        String dchan = channelEditor->getText();
+
+        std::string dchanValue = dchan.toStdString();
+        StreamProcessor->setChannels(dchanValue);
+        CoreServices::sendStatusMessage("Channel selection updated");
+    }
 }
 
 void StreamPluginEditor::startAcquisition()
 {
     portButton->setEnabled (false);
     portEditor->setEnabled (false);
+    channelButton->setEnabled (false);
+    channelEditor->setEnabled (false);
 }
 
 
@@ -78,6 +98,8 @@ void StreamPluginEditor::stopAcquisition()
 {
     portButton->setEnabled (true);
     portEditor->setEnabled (true);
+    channelButton->setEnabled (true);
+    channelEditor->setEnabled (true);
 }
 
 

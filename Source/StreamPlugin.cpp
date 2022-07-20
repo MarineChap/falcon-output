@@ -24,16 +24,16 @@
 
 
 #include "StreamPlugin.h"
+#include <sstream>
 
 StreamPlugin::StreamPlugin()
-    : GenericProcessor("Falcon Output"), flatBuilder(1024)
+    : GenericProcessor("Falcon Output"), flatBuilder(1024), channels_str_("*"), channels_selected({-1})
 {
     context = zmq_ctx_new();
     socket = 0;
     flag = 0;
     messageNumber = 0;
     port = 3335;
-
     setProcessorType(PROCESSOR_TYPE_SINK);
     if (!socket)
         createSocket();
@@ -82,6 +82,22 @@ void StreamPlugin::closeSocket()
     }
 }
 
+void StreamPlugin::setChannels(std::string channel_str){
+    channels_str_=channel_str;
+    channels_selected.clear();
+
+    if (channels_str_ == "*"){
+        channels_selected.push_back(-1);
+    }else{
+        std::stringstream ss(channel_str);
+        std::string item;
+        while (std::getline(ss, item, ',')) {
+          if (item.length() > 0) {
+            channels_selected.push_back(std::stoi(item));
+          }
+        }
+    }
+}
 void StreamPlugin::sendData(AudioSampleBuffer& audioBuffer, int nSamples,
                            uint64 timestamp, int sampleRate)
 {
@@ -90,12 +106,33 @@ void StreamPlugin::sendData(AudioSampleBuffer& audioBuffer, int nSamples,
     uint64_t nChannels = audioBuffer.getNumChannels();
     audioBuffer.setSize(nChannels, nSamples, true, true, true);
 
-    // Create message
-    auto samples = flatBuilder.CreateVector(*(audioBuffer.getArrayOfReadPointers()), nChannels*nSamples);
-    auto zmqBuffer = openephysflatbuffer::CreateContinuousData(flatBuilder, samples,
-                                                               nChannels, nSamples, timestamp,
-                                                               messageNumber, sampleRate);
-    flatBuilder.Finish(zmqBuffer);
+    if(channels_selected[0] == -1){
+
+        // Create message
+        auto samples = flatBuilder.CreateVector(*(audioBuffer.getArrayOfReadPointers()), nChannels*nSamples);
+        auto zmqBuffer = openephysflatbuffer::CreateContinuousData(flatBuilder, samples,
+                                                                   nChannels, nSamples, timestamp,
+                                                                   messageNumber, sampleRate);
+        flatBuilder.Finish(zmqBuffer);
+
+    }else{
+        nChannels = channels_selected.size();
+        auto array = audioBuffer.getArrayOfWritePointers();
+        float* output[nChannels];
+        int i =0;
+        for(auto ch: channels_selected){
+            output[i] = array[ch];
+                i++;
+        }
+        // Create message
+        auto samples = flatBuilder.CreateVector(*output, nChannels*nSamples);
+        auto zmqBuffer = openephysflatbuffer::CreateContinuousData(flatBuilder, samples,
+                                                                   nChannels, nSamples, timestamp,
+                                                                   messageNumber, sampleRate);
+        flatBuilder.Finish(zmqBuffer);
+
+    }
+
 
     uint8_t *buf = flatBuilder.GetBufferPointer();
     int size = flatBuilder.GetSize();

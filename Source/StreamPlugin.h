@@ -71,7 +71,13 @@ public:
         closeSocket();
         createSocket();
     }
+
+    void setChannels(std::string channel_str);
     uint32_t getPort () const { return port; }
+
+    std::string getChannels(){
+        return channels_str_;
+    }
 
 private:
 
@@ -81,6 +87,8 @@ private:
     void sendData(AudioSampleBuffer& continuousBuffer, int nSamples,
                   uint64 timestamp, int sampleRate);
 
+    std::string channels_str_;
+    std::vector<int> channels_selected;
     void *context;
     void *socket;
 
