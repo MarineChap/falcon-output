@@ -118,7 +118,8 @@ void StreamPlugin::sendData(AudioSampleBuffer& audioBuffer, int nSamples,
     }else{
         nChannels = channels_selected.size();
         auto array = audioBuffer.getArrayOfWritePointers();
-        float* output[nChannels];
+        float* *output;
+        *output = (float*)malloc(nChannels*sizeof(float*));
         int i =0;
         for(auto ch: channels_selected){
             output[i] = array[ch];
